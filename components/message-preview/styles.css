@@ -1,0 +1,60 @@
+.chat-bg::before{
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-color: #99BA92;
+}
+
+.chat-bg::after{
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background-image: url("/chat-bg-after.png");
+    background-position: top right;
+    background-size: 510px auto;
+    background-repeat: repeat;
+    mix-blend-mode: overlay;
+
+}
+
+.chat-message-button {
+    background-color: #4A8E3A8C;
+    margin: .125rem;
+    border-radius: .375rem;
+    font-size: .875rem;
+    height: 2.25rem;
+    padding: .4375rem;
+    outline: none !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.chat-message-button:hover{
+    background-color: #4A8E3A8C;
+    backdrop-filter: brightness(115%);
+}
+
+.preview-link {
+    text-decoration: underline;
+    color: #424cd4;
+}
+
+.message-text p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.message-text p + p {
+  margin-top: 1em;
+}
