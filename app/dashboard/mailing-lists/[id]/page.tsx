@@ -18,11 +18,14 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { sendMessage } from '@/lib/telegram';
 import { sendMessageFromTemplate } from '@/lib/messaging';
+import { useCampaignRunStore } from '@/lib/campaignRunStore';
+import { Badge } from '@/components/ui/badge';
 
 export default function MailingListDetailPage() {
   const router = useRouter();
   const params = useParams();
   const { bots, userLists, messageTemplates, campaigns, addCampaign, updateCampaign, testTelegramId, setTestTelegramId } = useStore();
+  const { campaignRuns } = useCampaignRunStore();
   
   const [formData, setFormData] = useState({
     name: '',
@@ -35,6 +38,8 @@ export default function MailingListDetailPage() {
 
   const isNewCampaign = params.id === 'new';
   const existingCampaign = campaigns.find((c) => c.id === params.id);
+
+  const thisCampaignRuns = campaignRuns.filter((c) => c.campaignId === params.id);
 
   useEffect(() => {
     if (!isNewCampaign && existingCampaign) {
@@ -235,6 +240,40 @@ export default function MailingListDetailPage() {
           </div>
         </CardContent>
       </Card>
+
+      <div className="mt-6">
+        <h3 className="text-lg font-medium mb-4">Runs</h3>
+        <p className="text-sm text-muted-foreground mb-4">
+          To create a new broadcast, click the button below.
+        </p>
+        <Link href={`/dashboard/mailing-lists/${params.id}/run`} >
+          <Button className="w-full" variant="outline">
+            🚀 New run
+          </Button>
+        </Link>
+
+        <div className="mt-4">
+          {thisCampaignRuns.map((run) => (
+            <div key={run.id} className="flex gap-2 items-center">
+              <span className="text-sm text-muted-foreground">{new Date(run.createdAt).toLocaleString()}</span>
+              <Badge variant="outline" className={run.status === 'completed' ? 'bg-green-500' : run.status === 'failed' ? 'bg-red-500' : ''}>{run.status}</Badge>
+              
+              {
+                (run.status === 'completed' || run.status === 'failed') && (
+                  <span className="text-sm text-muted-foreground"> <b>{run.successCount}</b> sent / <b>{run.failureCount}</b> failed</span>
+                )
+              }
+
+              <span className="text-sm text-muted-foreground">{run.finishedAt ? new Date(run.finishedAt).toLocaleString() : ''}</span>
+            </div>
+          ))}
+        </div>
+
+
+      </div>
+
+
     </div>
+
   );
 } 

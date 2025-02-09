@@ -6,10 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
-
+import { useCampaignRunStore } from '@/lib/campaignRunStore';
 export default function MailingListsPage() {
   const { campaigns } = useStore();
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const { campaignRuns } = useCampaignRunStore();
 
   return (
     <div>
@@ -31,28 +31,25 @@ export default function MailingListsPage() {
                 <CardTitle>{campaign.name}</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
                   <div className="space-y-1">
-                    <p className="text-sm font-medium capitalize">
-                      Status: {campaign.status}
-                    </p>
-                    {campaign.scheduledFor && (
-                      <p className="text-sm text-muted-foreground">
-                        Scheduled for: {new Date(campaign.scheduledFor).toLocaleString()}
-                      </p>
-                    )}
+                    Broadcasted {campaignRuns.filter((run) => run.campaignId === campaign.id).length} times.
                   </div>
-                  <div className="w-24">
-                    <div className="h-2 bg-secondary rounded-full">
-                      <div
-                        className="h-2 bg-primary rounded-full transition-all"
-                        style={{ width: `${campaign.progress}%` }}
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground text-center mt-1">
-                      {campaign.progress}%
-                    </p>
+                  <div className="space-y-1">
+                    Created {new Date(campaign.createdAt).toLocaleString()}
                   </div>
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <Link href={`/dashboard/mailing-lists/${campaign.id}`}>
+                    <Button variant="outline" size="sm">
+                      Edit
+                    </Button>
+                  </Link>
+                  <Link href={`/dashboard/mailing-lists/${campaign.id}/run`}>
+                    <Button size="sm">
+                      New Run
+                    </Button>
+                  </Link>
                 </div>
               </CardContent>
             </Card>
