@@ -60,3 +60,33 @@ export const sendMessage = async (botToken: string, chatId: string, message: str
   return data;
 };
 
+/**
+ * Send a message to a chat
+ * @param botToken - The token of the bot
+ * @param chatId - The id of the chat
+ * @param message - The message to send
+ * @param photoUrl - The url of the photo to send
+ * @param replyMarkup - Telegram reply markup
+ * @param disableLinkPreview - Disable link preview
+ * @param parseMode - Parse mode
+ * 
+ * https://core.telegram.org/bots/api#sendphoto
+ */
+export const sendPhoto = async (botToken: string, chatId: string, message: string, photoUrl: string, replyMarkup?: any, disableLinkPreview: boolean = false, parseMode: 'HTML' | 'MarkdownV2' = 'HTML') => {
+  const response = await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ 
+      chat_id: chatId,
+      caption: message, 
+      photo: photoUrl,
+      ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
+      parse_mode: parseMode, 
+      ...(disableLinkPreview ? { link_preview_options: { is_disabled: true } } : {})
+    }),
+  });
+  const data = await response.json();
+  return data;
+};

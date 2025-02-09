@@ -32,6 +32,7 @@ export default function MessageEditorPage() {
   const { messageTemplates, addMessageTemplate, updateMessageTemplate } = useStore();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [photoUrl, setPhotoUrl] = useState('');
   const [hideLinkPreview, setHideLinkPreview] = useState(true);
   const [parseMode, setParseMode] = useState<'HTML' | 'MarkdownV2'>('HTML');
   const [buttonRows, setButtonRows] = useState<ButtonItem[][]>([]);
@@ -44,11 +45,13 @@ export default function MessageEditorPage() {
       if (template) {
         setTitle(template.title);
         setContent(template.content);
+        setPhotoUrl(template.media[0] || '');
         setHideLinkPreview(template.hideLinkPreview);
         setParseMode(template.parseMode);
         if (template.buttons) {
           setButtonRows(template.buttons);
         }
+
 
       }
     }
@@ -101,7 +104,7 @@ export default function MessageEditorPage() {
     return !hasErrors;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validateButtons()) {
       toast.error("Please fill in all button values before saving");
       return;
@@ -117,10 +120,21 @@ export default function MessageEditorPage() {
       return;
     }
 
+    // Validate photo url
+    if(photoUrl) {
+      try {
+        // Try to fetch the photo url
+        await fetch(photoUrl);
+      } catch (error) {
+        toast.error("Photo URL is invalid");
+        return;
+      }
+    }
+
     const template = {
       title,
       content,
-      media: [], // TODO: Add media upload
+      media: [photoUrl],
       buttons: buttonRows,
       hideLinkPreview,
       parseMode
@@ -159,6 +173,17 @@ export default function MessageEditorPage() {
             </div>
 
             <div>
+              <Label htmlFor="photoUrl">Photo URL</Label>
+              <Input
+                id="photoUrl"
+                value={photoUrl}
+                onChange={(e) => setPhotoUrl(e.target.value)}
+                placeholder="Enter photo URL (optional)"
+              />
+               <p className="text-xs text-muted-foreground">Upload your image to imgur and paste the link here.</p>
+            </div>
+
+            <div>
               <Label>Message Content</Label>
               <div className="border rounded-md">
                 <Textarea
@@ -168,7 +193,10 @@ export default function MessageEditorPage() {
                   placeholder="Write your message content here..."
                 />
               </div>
-              <p className="text-xs text-muted-foreground">Use HTML formatting as described in <a href="https://core.telegram.org/bots/api#html-style" className="text-blue-500" target="_blank" rel="noopener noreferrer">Telegram API</a>. Maximum 4096 characters.</p>
+              <p className="text-xs text-muted-foreground">
+                Use HTML formatting as described in <a href="https://core.telegram.org/bots/api#html-style" className="text-blue-500" target="_blank" rel="noopener noreferrer">Telegram API</a>. 
+                Maximum {photoUrl ? "1024" : "4096"} characters.
+              </p>
             </div>
 
             <div className="flex items-center space-x-2">
@@ -288,6 +316,7 @@ export default function MessageEditorPage() {
           postText={content}
           buttons={buttonRows}
           parseMode={parseMode}
+          photoUrl={photoUrl}
         />
         <p className="text-xs text-muted-foreground">Preview might be inaccurate at this moment</p>
       </div>

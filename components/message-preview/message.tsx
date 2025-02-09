@@ -18,6 +18,7 @@ export const TelegramMessagePreview = (props: {
   postText: string;
   buttons?: ButtonItem[][];
   parseMode: 'HTML' | 'MarkdownV2';
+  photoUrl?: string;
 }) => {
 
   const [textToRender, setTextToRender] = useState(props.postText);
@@ -57,7 +58,6 @@ export const TelegramMessagePreview = (props: {
 
   return (
     <div className="w-full relative rounded-[16px] overflow-hidden flex flex-col max-h-full ">
-
       <div
         className="chat flex-grow flex flex-col py-[16px] px-[32px] items-start overflow-y-auto justify-end"
       >
@@ -65,7 +65,7 @@ export const TelegramMessagePreview = (props: {
 
         <div
           id="message-wrapper"
-          className="message-wrapper relative max-w-[90%] lg:max-w-[70%] min-w-[150px]"
+          className="message-wrapper relative max-w-[90%] lg:max-w-[464px] min-w-[150px]"
         >
           <div
             className="message-content bg-white rounded-[12px] shadow-[0_1px_2px_rgba(16,35,47,0.15)]"
@@ -81,6 +81,15 @@ export const TelegramMessagePreview = (props: {
               <div className="media-container rounded-t-[12px] overflow-hidden">
                 <img
                   src={props.media[0]}
+                  className="w-full object-cover max-h-[400px]"
+                  alt=""
+                />
+              </div>
+            )}
+            {props.photoUrl && (
+              <div className="media-container rounded-t-[12px] overflow-hidden">
+                <img
+                  src={props.photoUrl}
                   className="w-full object-cover max-h-[400px]"
                   alt=""
                 />

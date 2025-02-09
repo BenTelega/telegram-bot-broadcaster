@@ -1,5 +1,5 @@
 import { Bot, MessageTemplate } from "./store";
-import { sendMessage } from "./telegram";
+import { sendMessage, sendPhoto } from "./telegram";
 import { ButtonItem } from "./types";
 
 /**
@@ -11,17 +11,29 @@ import { ButtonItem } from "./types";
  */
 
 export const sendMessageFromTemplate = async (bot: Bot, chatId: string, template: MessageTemplate) => {
-
-    const response = await sendMessage(
+    // If there is a photo, send a photo message
+    if (template.media[0]) {
+        return await sendPhoto(
+            bot.token,
+            chatId,
+            template.content,
+            template.media[0],
+            convertButtonItemsToTelegramReplyMarkup(template.buttons),
+            template.hideLinkPreview,
+            template.parseMode
+        );
+    }
+    else {
+        return await sendMessage(
         bot.token, 
         chatId, 
         template.content, 
         convertButtonItemsToTelegramReplyMarkup(template.buttons), 
         template.hideLinkPreview,
         template.parseMode
-    );
+        );
+    }
 
-    return response;
 }
 
 
