@@ -99,9 +99,10 @@ export default function MailingListDetailPage() {
       if (response.ok) {
         toast.success('Test message sent successfully');
       } else {
-        toast.error('Failed to send test message');
+        toast.error(`Failed to send test message ${response.description}`);
       }
       
+
     } catch (error) {
       toast.error('Failed to send test message');
       console.error(error);

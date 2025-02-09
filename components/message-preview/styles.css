@@ -58,3 +58,81 @@
 .message-text p + p {
   margin-top: 1em;
 }
+
+blockquote {
+    background-color: #D955741a;
+    display: inline-block;
+    position: relative;
+    padding-inline: .5rem 1rem;
+    margin-block: .125rem;
+    border-radius: .25rem;
+    overflow: hidden;
+    white-space: pre-wrap;
+    font-size: calc(16px - .125rem);
+    padding-top: .125rem;
+    padding-bottom: .125rem;
+
+}
+
+blockquote::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    inset-inline-start: 0;
+    bottom: 0;
+    width: 3px;
+    background-color: #D95574;
+}
+
+blockquote::after {
+    font-style: normal;
+    font-weight: normal;
+    text-transform: none;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+    content: "”";
+    color: #D95574;
+    position: absolute;
+    top: 0.25rem;
+    inset-inline-end: 0.25rem;
+    font-size: 0.625rem;
+    font-family: icons !important;
+    font-variant: normal;
+}
+
+code {
+    color: rgb(74, 114, 154);
+    background: rgb(112, 117, 121, 0.078);
+    white-space: pre-wrap;
+    margin: 0;
+    padding: 1px 2px;
+    border-radius: 4px;
+}
+
+pre {
+    margin: 0;
+    white-space: pre-wrap;
+    overflow: hidden;
+    background-color: rgb(112, 117, 121, 0.078);
+    padding: .1875rem .375rem .1875rem .6875rem;
+    margin-block: .25rem;
+    border-radius: .25rem;
+    position: relative;
+}
+
+pre::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    inset-inline-start: 0;
+    bottom: 0;
+    width: 3px;
+    background-color: #D95574;
+}
+
+tg-spoiler, .tg-spoiler {
+    animation: pulse-opacity-light 1.75s linear infinite;
+    background-image: url("/spoiler-dots.png");
+    background-size: auto min(100%, 1.125rem);
+    border-radius: .5rem;
+}

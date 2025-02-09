@@ -24,6 +24,7 @@ import { TelegramMessagePreview } from '@/components/message-preview/message';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { toast } from 'sonner';
 
 export default function MessageEditorPage() {
   const router = useRouter();
@@ -34,12 +35,8 @@ export default function MessageEditorPage() {
   const [hideLinkPreview, setHideLinkPreview] = useState(true);
   const [parseMode, setParseMode] = useState<'HTML' | 'MarkdownV2'>('HTML');
   const [buttonRows, setButtonRows] = useState<ButtonItem[][]>([]);
+  const [buttonErrors, setButtonErrors] = useState<{ [key: string]: boolean }>({});
   const isEditing = params.id !== 'new';
-
-  useEffect(() => {
-    console.log(content);
-  },[content])
-
 
   useEffect(() => {
     if (isEditing && params.id) {
@@ -86,7 +83,40 @@ export default function MessageEditorPage() {
     ));
   };
 
+  const validateButtons = () => {
+    let hasErrors = false;
+    const newButtonErrors: { [key: string]: boolean } = {};
+
+    buttonRows.forEach((row, rowIndex) => {
+      row.forEach((button, buttonIndex) => {
+        const key = `${rowIndex}-${buttonIndex}`;
+        if (!button.value.trim()) {
+          newButtonErrors[key] = true;
+          hasErrors = true;
+        }
+      });
+    });
+
+    setButtonErrors(newButtonErrors);
+    return !hasErrors;
+  };
+
   const handleSave = () => {
+    if (!validateButtons()) {
+      toast.error("Please fill in all button values before saving");
+      return;
+    }
+
+    if(content == "") {
+      toast.error("Message text cannot be empty");
+      return;
+    }
+
+    if(content.length > 4096) {
+      toast.error("Message text cannot be longer than 4096 characters");
+      return;
+    }
+
     const template = {
       title,
       content,
@@ -207,6 +237,7 @@ export default function MessageEditorPage() {
                                 onChange={(e) =>
                                   updateButton(rowIndex, buttonIndex, { value: e.target.value })
                                 }
+                                className={buttonErrors[`${rowIndex}-${buttonIndex}`] ? 'border-red-500' : ''}
                               />
                             </div>
                             <div className="flex gap-2">
@@ -256,6 +287,7 @@ export default function MessageEditorPage() {
           media={[]}
           postText={content}
           buttons={buttonRows}
+          parseMode={parseMode}
         />
         <p className="text-xs text-muted-foreground">Preview might be inaccurate at this moment</p>
       </div>
