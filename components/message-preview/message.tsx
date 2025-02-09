@@ -50,7 +50,18 @@ export const TelegramMessagePreview = (props: {
 
               {/* The message text */}
               <div className="message-text break-words">
-                <Markdown children={props.postText} />
+                <Markdown children={props.postText} options={{
+                  overrides: {
+                    a: {
+                      props: {
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        className: "text-[#0088cc] hover:underline",
+                      },
+                    },
+
+                  },
+                }} />
               </div>
 
               <div className="message-time text-right mt-1">

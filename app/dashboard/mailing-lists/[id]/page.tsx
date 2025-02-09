@@ -17,11 +17,12 @@ import {
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { sendMessage } from '@/lib/telegram';
+import { sendMessageFromTemplate } from '@/lib/messaging';
 
 export default function MailingListDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const { bots, userLists, messageTemplates, campaigns, addCampaign, updateCampaign } = useStore();
+  const { bots, userLists, messageTemplates, campaigns, addCampaign, updateCampaign, testTelegramId, setTestTelegramId } = useStore();
   
   const [formData, setFormData] = useState({
     name: '',
@@ -30,7 +31,6 @@ export default function MailingListDetailPage() {
     messageId: '',
   });
 
-  const [testTelegramId, setTestTelegramId] = useState('');
   const [isSending, setIsSending] = useState(false);
 
   const isNewCampaign = params.id === 'new';
@@ -89,9 +89,7 @@ export default function MailingListDetailPage() {
         throw new Error('Bot or message template not found');
       }
 
-      console.log(selectedTemplate);
-
-      const response = await sendMessage(selectedBot.token, testTelegramId, selectedTemplate.content, selectedTemplate.buttons, true);
+      const response = await sendMessageFromTemplate(selectedBot, testTelegramId, selectedTemplate);
 
       if (response.ok) {
         toast.success('Test message sent successfully');

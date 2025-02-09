@@ -35,14 +35,14 @@ export const getMe = async (botToken: string): Promise<GetMeSuccess|TelegramErro
  * @param botToken - The token of the bot
  * @param chatId - The id of the chat
  * @param message - The message to send
- * @param replyMarkup - Inline keyboards ButtonItem[][] (not the telegram ones!)
+ * @param replyMarkup - Telegram reply markup
  * @param disableLinkPreview - Disable link preview
  * @param parseMode - Parse mode
  * 
  * https://core.telegram.org/bots/api#sendmessage
  */
 
-export const sendMessage = async (botToken: string, chatId: string, message: string, replyMarkup?: ButtonItem[][], disableLinkPreview: boolean = false, parseMode: 'HTML' | 'MarkdownV2' = 'HTML') => {
+export const sendMessage = async (botToken: string, chatId: string, message: string, replyMarkup?: any, disableLinkPreview: boolean = false, parseMode: 'HTML' | 'MarkdownV2' = 'HTML') => {
   const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
     method: 'POST',
     headers: {
@@ -51,7 +51,7 @@ export const sendMessage = async (botToken: string, chatId: string, message: str
     body: JSON.stringify({ 
       chat_id: chatId,
       text: message, 
-      ...(replyMarkup ? { reply_markup: convertButtonItemsToTelegramReplyMarkup(replyMarkup) } : {}),
+      ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
       parse_mode: parseMode, 
       ...(disableLinkPreview ? { link_preview_options: { is_disabled: true } } : {})
     }),
@@ -60,13 +60,3 @@ export const sendMessage = async (botToken: string, chatId: string, message: str
   return data;
 };
 
-/**
- * converts to https://core.telegram.org/bots/api#inlinekeyboardmarkup
- */
-export const convertButtonItemsToTelegramReplyMarkup = (buttonItems: ButtonItem[][]) => {
-  const inline_keyboard = buttonItems.map((row) => row.map((item) => ({
-    text: item.text,
-    ...(item.type === 'link' ? { url: item.value } : { callback_data: item.value })
-  })));
-  return { inline_keyboard };
-}

@@ -27,6 +27,8 @@ export interface MessageTemplate {
   media: string[];
   buttons?: ButtonItem[][];
   createdAt: string;
+  hideLinkPreview: boolean;
+  parseMode: 'HTML' | 'MarkdownV2';
 }
 
 export interface Campaign {
@@ -46,6 +48,8 @@ interface Store {
   userLists: UserList[];
   messageTemplates: MessageTemplate[];
   campaigns: Campaign[];
+  testTelegramId: string;
+  setTestTelegramId: (id: string) => void;
   addBot: (bot: Omit<Bot, 'id' | 'createdAt'>) => void;
   removeBot: (id: string) => void;
   addUserList: (userList: Omit<UserList, 'id' | 'createdAt'>) => void;
@@ -65,6 +69,8 @@ export const useStore = create<Store>()(
       userLists: [],
       messageTemplates: [],
       campaigns: [],
+      testTelegramId: '',
+      setTestTelegramId: (id) => set({ testTelegramId: id }),
       addBot: (bot) =>
         set((state) => ({
           bots: [

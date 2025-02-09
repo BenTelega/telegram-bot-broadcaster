@@ -21,6 +21,9 @@ import {
   Trash,
 } from 'lucide-react';
 import { TelegramMessagePreview } from '@/components/message-preview/message';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 export default function MessageEditorPage() {
   const router = useRouter();
@@ -28,6 +31,8 @@ export default function MessageEditorPage() {
   const { messageTemplates, addMessageTemplate, updateMessageTemplate } = useStore();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [hideLinkPreview, setHideLinkPreview] = useState(true);
+  const [parseMode, setParseMode] = useState<'HTML' | 'MarkdownV2'>('HTML');
   const [buttonRows, setButtonRows] = useState<ButtonItem[][]>([]);
   const isEditing = params.id !== 'new';
 
@@ -42,9 +47,12 @@ export default function MessageEditorPage() {
       if (template) {
         setTitle(template.title);
         setContent(template.content);
+        setHideLinkPreview(template.hideLinkPreview);
+        setParseMode(template.parseMode);
         if (template.buttons) {
           setButtonRows(template.buttons);
         }
+
       }
     }
   }, [isEditing, params.id, messageTemplates]);
@@ -83,13 +91,17 @@ export default function MessageEditorPage() {
       title,
       content,
       media: [], // TODO: Add media upload
-      buttons: buttonRows
+      buttons: buttonRows,
+      hideLinkPreview,
+      parseMode
     };
     if(isEditing) {
       updateMessageTemplate(params.id as string, template);
     } else {
       addMessageTemplate(template);
     }
+
+
     router.push('/dashboard/messages');
   };
 
@@ -129,8 +141,39 @@ export default function MessageEditorPage() {
               <p className="text-xs text-muted-foreground">Use HTML formatting as described in <a href="https://core.telegram.org/bots/api#html-style" className="text-blue-500" target="_blank" rel="noopener noreferrer">Telegram API</a>. Maximum 4096 characters.</p>
             </div>
 
+            <div className="flex items-center space-x-2">
+              <Checkbox id="hideLinkPreview" checked={hideLinkPreview} onCheckedChange={() => setHideLinkPreview(!hideLinkPreview)} />
+              <label
+                htmlFor="hideLinkPreview"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Hide telegram's link preview (when there is a link to external website)
+              </label>
+            </div>
+
+            <div className="flex items-center space-x-4">
+              <Label>Parse Mode</Label>
+              <RadioGroup
+                value={parseMode}
+                onValueChange={(value) => setParseMode(value as 'HTML' | 'MarkdownV2')}
+                className="flex items-center space-x-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="HTML" id="html" />
+                  <Label htmlFor="html">HTML</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="MarkdownV2" id="markdown" disabled />
+                  <Label htmlFor="markdown" className="text-muted-foreground">MarkdownV2</Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+
+
             <div>
               <Label>Buttons</Label>
+
               <div className="space-y-4">
                 {buttonRows.map((row, rowIndex) => (
                   <Card key={rowIndex}>
