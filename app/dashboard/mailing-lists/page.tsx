@@ -25,35 +25,38 @@ export default function MailingListsPage() {
 
       <div className="grid grid-cols-1 gap-4">
         {campaigns.map((campaign) => (
-          <Link href={`/dashboard/mailing-lists/${campaign.id}`} key={campaign.id}>
-            <Card className="hover:bg-accent/50 transition-colors cursor-pointer">
-              <CardHeader>
-                <CardTitle>{campaign.name}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <div className="space-y-1">
-                    Broadcasted {campaignRuns.filter((run) => run.campaignId === campaign.id).length} times.
-                  </div>
-                  <div className="space-y-1">
-                    Created {new Date(campaign.createdAt).toLocaleString()}
-                  </div>
+          <Card className="hover:bg-accent/50 transition-colors cursor-pointer" key={campaign.id}>
+            <CardHeader>
+              <CardTitle>{campaign.name}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
+                <div className="space-y-1">
+                  Broadcasted {campaignRuns.filter((run) => run.campaignId === campaign.id).length} times.
                 </div>
-                <div className="flex gap-2 mt-4">
-                  <Link href={`/dashboard/mailing-lists/${campaign.id}`}>
-                    <Button variant="outline" size="sm">
-                      Edit
-                    </Button>
-                  </Link>
-                  <Link href={`/dashboard/mailing-lists/${campaign.id}/run`}>
-                    <Button size="sm">
-                      New Run
-                    </Button>
-                  </Link>
+                <div className="space-y-1">
+                  Created {new Date(campaign.createdAt).toLocaleString()}
                 </div>
-              </CardContent>
-            </Card>
-          </Link>
+              </div>
+              <div className="flex gap-2 mt-4">
+                <Link href={`/dashboard/mailing-lists/${campaign.id}`}>
+                  <Button variant="outline" size="sm">
+                    Edit
+                  </Button>
+                </Link>
+                <Link href={`/dashboard/mailing-lists/${campaign.id}/run`}>
+                  <Button size="sm">
+                    New Run
+                  </Button>
+                </Link>
+                <Link href={`/dashboard/mailing-lists/${campaign.id}/runs`}>
+                  <Button size="sm" variant="outline">
+                    Runs ({campaignRuns.filter((run) => run.campaignId === campaign.id).length})
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
 

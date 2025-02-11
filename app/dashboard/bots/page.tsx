@@ -17,6 +17,7 @@ import { Plus, Loader2, Trash2, TestTube2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AddBotModal } from './add-bot.modal';
 import { getMe } from '@/lib/telegram';
+import { ConfirmationModal } from '@/components/confirmation-modal';
 
 export default function BotsPage() {
   const { bots, removeBot } = useStore();
@@ -92,15 +93,22 @@ export default function BotsPage() {
                     )}
                     Test
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleDeleteBot(bot.id)}
-                    className="text-red-500 hover:text-red-600"
+                  <ConfirmationModal
+                    onConfirm={() => handleDeleteBot(bot.id)}
+                    title="Delete Bot"
+                    description="Are you sure you want to delete this bot? This action cannot be undone."
+                    confirmText="Delete"
+                    cancelText="Cancel"
                   >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete
-                  </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="text-red-500 hover:text-red-600"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </Button>
+                  </ConfirmationModal>
                 </div>
               </div>
             </CardContent>

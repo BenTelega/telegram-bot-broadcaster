@@ -26,6 +26,7 @@ interface Store {
   addCampaignRun: (run: CampaignRun) => void;
   updateCampaignRun: (id: string, updates: Partial<CampaignRun>) => void;
   removeCampaignRun: (id: string) => void;
+  removeCampaignRunsByCampaignId: (campaignId: string) => void;
 }
 
 export const useCampaignRunStore = create<Store>()(
@@ -45,6 +46,10 @@ export const useCampaignRunStore = create<Store>()(
       removeCampaignRun: (id) =>
         set((state) => ({
           campaignRuns: state.campaignRuns.filter((run) => run.id !== id),
+        })),
+      removeCampaignRunsByCampaignId: (campaignId) =>
+        set((state) => ({
+          campaignRuns: state.campaignRuns.filter((run) => run.campaignId !== campaignId),
         })),
     }),
     {

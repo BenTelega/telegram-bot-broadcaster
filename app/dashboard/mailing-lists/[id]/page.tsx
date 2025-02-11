@@ -20,12 +20,16 @@ import { sendMessage } from '@/lib/telegram';
 import { sendMessageFromTemplate } from '@/lib/messaging';
 import { useCampaignRunStore } from '@/lib/campaignRunStore';
 import { Badge } from '@/components/ui/badge';
+import CampaignRunCard from './campaign-run-card';
+import { Trash } from 'lucide-react';
+import { ConfirmationModal } from '@/components/confirmation-modal';
 
 export default function MailingListDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const { bots, userLists, messageTemplates, campaigns, addCampaign, updateCampaign, testTelegramId, setTestTelegramId } = useStore();
-  const { campaignRuns } = useCampaignRunStore();
+  const { bots, userLists, messageTemplates, campaigns, addCampaign, updateCampaign, testTelegramId, setTestTelegramId, removeCampaign } = useStore();
+  const { campaignRuns, removeCampaignRunsByCampaignId } = useCampaignRunStore();
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -109,6 +113,13 @@ export default function MailingListDetailPage() {
     } finally {
       setIsSending(false);
     }
+  };
+
+  const handleDeleteCampaign = () => {
+    removeCampaign(params.id as string);
+    removeCampaignRunsByCampaignId(params.id as string);
+    toast.success('Campaign and runs deleted successfully');
+    router.push('/dashboard/mailing-lists');
   };
 
   return (
@@ -242,39 +253,56 @@ export default function MailingListDetailPage() {
         </CardContent>
       </Card>
 
-      <div className="mt-6">
-        <h3 className="text-lg font-medium mb-4">Runs</h3>
-        <p className="text-sm text-muted-foreground mb-4">
+      {existingCampaign && (
+        <div className="mt-6">
+          <h3 className="text-lg font-medium mb-4">Runs</h3>
+          <p className="text-sm text-muted-foreground mb-4">
           To create a new broadcast, click the button below.
-        </p>
-        <Link href={`/dashboard/mailing-lists/${params.id}/run`} >
-          <Button className="w-full" variant="outline">
-            🚀 New run
-          </Button>
-        </Link>
+          </p>
+          <Link href={`/dashboard/mailing-lists/${params.id}/run`} >
+            <Button className="w-full" variant="outline">
+              🚀 New run
+            </Button>
+          </Link>
 
-        <div className="mt-4">
-          {thisCampaignRuns.map((run) => (
-            <div key={run.id} className="flex gap-2 items-center">
-              <span className="text-sm text-muted-foreground">{new Date(run.createdAt).toLocaleString()}</span>
-              <Badge variant="outline" className={run.status === 'completed' ? 'bg-green-500' : run.status === 'failed' ? 'bg-red-500' : ''}>{run.status}</Badge>
-              
-              {
-                (run.status === 'completed' || run.status === 'failed') && (
-                  <span className="text-sm text-muted-foreground"> <b>{run.successCount}</b> sent / <b>{run.failureCount}</b> failed</span>
-                )
-              }
+          <div className="mt-4">
+            {thisCampaignRuns.slice(-3).map((run) => (
+              <CampaignRunCard key={run.id} campaignRun={run} />
+            ))}
+          </div>
 
-              <span className="text-sm text-muted-foreground">{run.finishedAt ? new Date(run.finishedAt).toLocaleString() : ''}</span>
-            </div>
-          ))}
-        </div>
-
-
+          {
+            thisCampaignRuns.length > 3 && (
+              <div className="mt-4">
+                <Link href={`/dashboard/mailing-lists/${params.id}/runs`} >
+                  <Button className="w-full" variant="outline">View all runs ({thisCampaignRuns.length})</Button>
+                </Link>
+              </div>
+            )
+          }
       </div>
+      )}
 
+      {existingCampaign && (
+        <div className="mt-6">
+          <p className="text-sm text-muted-foreground mb-4">
+            You can delete this campaign and all its runs to free local storage.
+          </p>
+          <ConfirmationModal
+            onConfirm={handleDeleteCampaign}
+            title="Delete Campaign & Runs"
+            description="Are you sure you want to delete this campaign and all its runs? This action cannot be undone."
+            confirmText="Delete"
+            cancelText="Cancel"
+          >
+            <Button className="w-full" variant="outline">
+              <Trash className="h-4 w-4 mr-2" />
+              Delete Campaign & runs
+            </Button>
+          </ConfirmationModal>
+        </div>
+      )}
 
     </div>
-
   );
 } 
