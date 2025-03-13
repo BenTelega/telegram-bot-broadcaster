@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, KeyboardEvent } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useStore } from '@/lib/store';
 import { Card, CardContent } from '@/components/ui/card';
@@ -19,12 +19,18 @@ import {
   Link,
   Plus,
   Trash,
+  Eye,
+  FileCode,
+  X,
+  Undo,
 } from 'lucide-react';
 import { TelegramMessagePreview } from '@/components/message-preview/message';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { toast } from 'sonner';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 export default function MessageEditorPage() {
   const router = useRouter();
@@ -37,7 +43,10 @@ export default function MessageEditorPage() {
   const [parseMode, setParseMode] = useState<'HTML' | 'MarkdownV2'>('HTML');
   const [buttonRows, setButtonRows] = useState<ButtonItem[][]>([]);
   const [buttonErrors, setButtonErrors] = useState<{ [key: string]: boolean }>({});
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isEditing = params.id !== 'new';
+  const [contentHistory, setContentHistory] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
 
   useEffect(() => {
     if (isEditing && params.id) {
@@ -51,12 +60,85 @@ export default function MessageEditorPage() {
         if (template.buttons) {
           setButtonRows(template.buttons);
         }
-
-
       }
     }
   }, [isEditing, params.id, messageTemplates]);
 
+  // Save content to history when it changes
+  useEffect(() => {
+    if (content !== contentHistory[historyIndex]) {
+      // Add new state to history, removing any future states if we're in the middle of the history
+      const newHistory = contentHistory.slice(0, historyIndex + 1);
+      newHistory.push(content);
+      
+      // Limit history size to prevent memory issues
+      if (newHistory.length > 50) {
+        newHistory.shift();
+      }
+      
+      setContentHistory(newHistory);
+      setHistoryIndex(newHistory.length - 1);
+    }
+  }, [content]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Handle Ctrl+Z for undo
+    if (e.ctrlKey && e.key === 'z') {
+      e.preventDefault();
+      undo();
+    }
+  };
+
+  const undo = () => {
+    if (historyIndex > 0) {
+      const newIndex = historyIndex - 1;
+      setHistoryIndex(newIndex);
+      setContent(contentHistory[newIndex]);
+    }
+  };
+
+  const formatText = (tag: string, attributes?: string) => {
+    if (!textareaRef.current) return;
+    
+    const textarea = textareaRef.current;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = content.substring(start, end);
+    
+    let formattedText = '';
+    if (tag === 'a') {
+      const url = attributes || 'https://';
+      formattedText = `<a href="${url}">${selectedText || 'link text'}</a>`;
+    } else if (tag === 'pre') {
+      formattedText = `<pre>${selectedText || 'code block'}</pre>`;
+    } else if (tag === 'code') {
+      formattedText = `<code>${selectedText || 'inline code'}</code>`;
+    } else if (tag === 'tg-spoiler') {
+      formattedText = `<tg-spoiler>${selectedText || 'spoiler text'}</tg-spoiler>`;
+    } else if (tag === 'blockquote') {
+      formattedText = `<blockquote>${selectedText || 'quote text'}</blockquote>`;
+    } else if (tag === 'clear') {
+      // Remove HTML tags from selected text
+      formattedText = selectedText.replace(/<\/?[^>]+(>|$)/g, '');
+    } else {
+      formattedText = `<${tag}>${selectedText || `${tag} text`}</${tag}>`;
+    }
+    
+    const newContent = content.substring(0, start) + formattedText + content.substring(end);
+    setContent(newContent);
+    
+    // Set focus back to textarea and position cursor after the inserted text
+    setTimeout(() => {
+      textarea.focus();
+      const newCursorPosition = start + formattedText.length;
+      textarea.setSelectionRange(newCursorPosition, newCursorPosition);
+    }, 0);
+  };
+
+  const handleLinkInsert = (url: string) => {
+    if (!url.trim()) return;
+    formatText('a', url);
+  };
 
   const addButtonRow = () => {
     setButtonRows(prev => [...prev, []]);
@@ -145,10 +227,8 @@ export default function MessageEditorPage() {
       addMessageTemplate(template);
     }
 
-
     router.push('/dashboard/messages');
   };
-
 
   return (
     <div className="space-y-6">
@@ -186,10 +266,194 @@ export default function MessageEditorPage() {
             <div>
               <Label>Message Content</Label>
               <div className="border rounded-md">
+                <div className="flex flex-wrap gap-1 p-1 border-b bg-muted/50">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8" 
+                          onClick={() => formatText('b')}
+                        >
+                          <Bold className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Bold</TooltipContent>
+                    </Tooltip>
+
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8" 
+                          onClick={() => formatText('i')}
+                        >
+                          <Italic className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Italic</TooltipContent>
+                    </Tooltip>
+
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8" 
+                          onClick={() => formatText('u')}
+                        >
+                          <Underline className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Underline</TooltipContent>
+                    </Tooltip>
+
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8" 
+                          onClick={() => formatText('s')}
+                        >
+                          <Strikethrough className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Strikethrough</TooltipContent>
+                    </Tooltip>
+
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8" 
+                          onClick={() => formatText('tg-spoiler')}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Spoiler</TooltipContent>
+                    </Tooltip>
+
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8" 
+                          onClick={() => formatText('code')}
+                        >
+                          <Code className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Inline Code</TooltipContent>
+                    </Tooltip>
+
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8" 
+                          onClick={() => formatText('pre')}
+                        >
+                          <FileCode className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Code Block</TooltipContent>
+                    </Tooltip>
+
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8" 
+                          onClick={() => formatText('blockquote')}
+                        >
+                          <Quote className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Blockquote</TooltipContent>
+                    </Tooltip>
+
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <Link className="h-4 w-4" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-80">
+                        <div className="flex flex-col gap-2">
+                          <Label htmlFor="link-url">URL</Label>
+                          <div className="flex gap-2">
+                            <Input 
+                              id="link-url" 
+                              placeholder="https://" 
+                              className="flex-1"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  handleLinkInsert((e.target as HTMLInputElement).value);
+                                  (e.target as HTMLInputElement).value = '';
+                                  document.body.click(); // Close popover
+                                }
+                              }}
+                            />
+                            <Button 
+                              onClick={(e) => {
+                                const input = document.getElementById('link-url') as HTMLInputElement;
+                                handleLinkInsert(input.value);
+                                input.value = '';
+                                document.body.click(); // Close popover
+                              }}
+                            >
+                              Insert
+                            </Button>
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+
+                    <div className="border-l mx-1 h-8"></div>
+
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8" 
+                          onClick={() => formatText('clear')}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Clear Formatting</TooltipContent>
+                    </Tooltip>
+
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8" 
+                          onClick={undo}
+                        >
+                          <Undo className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Undo (Ctrl+Z)</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
                 <Textarea
+                  ref={textareaRef}
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
-                  className="min-h-[200px] focus-visible:ring-0"
+                  onKeyDown={handleKeyDown}
+                  className="min-h-[200px] focus-visible:ring-0 rounded-t-none"
                   placeholder="Write your message content here..."
                 />
               </div>
@@ -226,8 +490,6 @@ export default function MessageEditorPage() {
                 </div>
               </RadioGroup>
             </div>
-
-
 
             <div>
               <Label>Buttons</Label>
