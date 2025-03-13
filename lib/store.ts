@@ -53,6 +53,7 @@ interface Store {
   addBot: (bot: Omit<Bot, 'id' | 'createdAt'>) => void;
   removeBot: (id: string) => void;
   addUserList: (userList: Omit<UserList, 'id' | 'createdAt'>) => void;
+  updateUserList: (id: string, updates: Partial<UserList>) => void;
   removeUserList: (id: string) => void;
   addMessageTemplate: (template: Omit<MessageTemplate, 'id' | 'createdAt'>) => void;
   updateMessageTemplate: (id: string, updates: Partial<MessageTemplate>) => void;
@@ -96,6 +97,12 @@ export const useStore = create<Store>()(
               createdAt: new Date().toISOString(),
             },
           ],
+        })),
+      updateUserList: (id, updates) =>
+        set((state) => ({
+          userLists: state.userLists.map((list) =>
+            list.id === id ? { ...list, ...updates } : list
+          ),
         })),
       removeUserList: (id) =>
         set((state) => ({

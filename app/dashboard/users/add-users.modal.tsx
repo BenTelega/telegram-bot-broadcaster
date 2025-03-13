@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Check, Loader2, Upload, XCircle } from "lucide-react";
+import { Check, Loader2, Upload, XCircle, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { getMe } from "@/lib/telegram";
 
@@ -31,17 +31,35 @@ export function AddUsersModal({ isOpen, onClose }: AddUsersModalProps) {
   const [usersCount, setUsersCount] = useState(0);
   const [duplicatesCount, setDuplicatesCount] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const convertPlainTextToUserIds = (text: string) => {
     return text.replaceAll(",", "\n").replaceAll(" ", "\n").replaceAll(";", "\n").split("\n").map((user) => user.trim()).filter((user) => user !== "");
   };
-
 
   useEffect(() => {
     setUsersCount(convertPlainTextToUserIds(plainText).length);
     setDuplicatesCount(convertPlainTextToUserIds(plainText).filter((user, index, self) => self.indexOf(user) !== index).length);
   }, [plainText]);
 
+  useEffect(() => {
+    if (selectedFile) {
+      readFileContent(selectedFile);
+    }
+  }, [selectedFile]);
+
+  const readFileContent = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target?.result as string;
+      setPlainText(content || "");
+    };
+    reader.onerror = () => {
+      toast.error("Failed to read file");
+    };
+    reader.readAsText(file);
+  };
 
   const resetForm = () => {
     setPlainText("");
@@ -71,13 +89,46 @@ export function AddUsersModal({ isOpen, onClose }: AddUsersModalProps) {
         count: userIds.length,
       });
 
-
       toast.success("Users added successfully!");
       handleClose();
     } catch (error) {
       toast.error("Failed to add users");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+      if (file.type === "text/plain" || file.name.endsWith(".txt") || file.name.endsWith(".csv")) {
+        setSelectedFile(file);
+      } else {
+        toast.error("Please upload a .txt or .csv file");
+      }
+    }
+  };
+
+  const handleFileClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setSelectedFile(e.target.files[0]);
     }
   };
 
@@ -96,14 +147,13 @@ export function AddUsersModal({ isOpen, onClose }: AddUsersModalProps) {
               placeholder="Customers"
               value={name}
               onChange={(e) => setName(e.target.value)}
-
             />
           </div>
 
           <Tabs defaultValue="plain-text" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="plain-text">Plain Text</TabsTrigger>
-              <TabsTrigger value="file">From File (TODO)</TabsTrigger>
+              <TabsTrigger value="file">From File</TabsTrigger>
             </TabsList>
             <TabsContent value="plain-text" className="space-y-4">
               <div className="space-y-2">
@@ -114,7 +164,6 @@ export function AddUsersModal({ isOpen, onClose }: AddUsersModalProps) {
                   value={plainText}
                   onChange={(e) => setPlainText(e.target.value)}
                   className="min-h-[120px]"
-
                 />
                 <p className="text-xs text-muted-foreground">
                   Enter one telegram user ID per line
@@ -125,24 +174,55 @@ export function AddUsersModal({ isOpen, onClose }: AddUsersModalProps) {
               </div>
             </TabsContent>
             <TabsContent value="file" className="space-y-4">
-
               <div className="space-y-2">
                 <Label htmlFor="file">Upload File</Label>
-                <div className="border-2 border-dashed rounded-lg p-4 hover:bg-accent/50 transition-colors">
-                  <Input
+                <div 
+                  className={`border-2 border-dashed rounded-lg p-6 transition-colors flex flex-col items-center justify-center cursor-pointer ${
+                    isDragging ? "border-primary bg-primary/10" : "hover:bg-accent/50"
+                  }`}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  onClick={handleFileClick}
+                >
+                  <input
+                    ref={fileInputRef}
                     id="file"
                     type="file"
                     accept=".txt,.csv"
-                    className="cursor-pointer"
-                    disabled={true}
-                    onChange={(e) =>
-                      setSelectedFile(e.target.files?.[0] || null)
-                    }
+                    className="hidden"
+                    onChange={handleFileChange}
                   />
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Upload a .txt or .csv file with one username or user ID per
-                    line
-                  </p>
+                  
+                  {selectedFile ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <FileText className="h-10 w-10 text-primary" />
+                      <p className="font-medium">{selectedFile.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {usersCount} users, {duplicatesCount} duplicates
+                      </p>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedFile(null);
+                          setPlainText("");
+                        }}
+                      >
+                        <XCircle className="h-4 w-4 mr-2" />
+                        Remove
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      <Upload className="h-10 w-10 text-muted-foreground mb-2" />
+                      <p className="font-medium">Click or drag and drop</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Upload a .txt or .csv (TODO) file with one username or user ID per line
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
             </TabsContent>
